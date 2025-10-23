@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards - Konceptet e Gramatikës Shqipe</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom font for better readability */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .flashcard-container {
+            perspective: 1000px;
+        }
+        .flashcard {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s;
+            cursor: pointer;
+        }
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            border: 4px solid #3b82f6; /* Blue border for a learning theme */
+        }
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: #ebf5ff; /* Lighter blue for back */
+            border: 4px solid #1d4ed8;
+        }
+        .navigation-button {
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .navigation-button:hover {
+            transform: translateY(-2px);
+        }
+        .navigation-button:active {
+            transform: translateY(0);
+        }
+        .text-content {
+            white-space: pre-wrap; /* Preserve new lines from definitions */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Header -->
+    <header class="text-center mb-10 w-full max-w-xl">
+        <h1 class="text-4xl font-extrabold text-gray-800 mb-2">Flashcards në Shqip</h1>
+        <p class="text-lg text-gray-600">Mëso Konceptet Kryesore të Gramatikës</p>
+    </header>
+
+    <!-- Main Flashcard Area -->
+    <main class="w-full max-w-xl">
+        <div id="flashcard-container" class="flashcard-container">
+            <!-- Flashcard will be dynamically inserted here -->
+        </div>
+
+        <!-- Navigation Controls -->
+        <div class="flex justify-between mt-8 space-x-4">
+            <button id="prev-btn" class="navigation-button flex items-center px-6 py-3 bg-gray-300 text-gray-800 font-bold rounded-xl hover:bg-gray-400 disabled:opacity-50" disabled>
+                <i data-lucide="chevron-left" class="w-5 h-5 mr-2"></i>
+                Prapa
+            </button>
+            <button id="next-btn" class="navigation-button flex items-center px-6 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 disabled:opacity-50">
+                Përpara
+                <i data-lucide="chevron-right" class="w-5 h-5 ml-2"></i>
+            </button>
+        </div>
+
+        <!-- Status and Indicator -->
+        <div class="text-center mt-6 text-gray-700 font-semibold">
+            <p id="card-status">Karta 1 nga 6</p>
+        </div>
+    </main>
+
+    <script>
+        // Array of flashcard data in Albanian
+        const flashcardData = [
+            {
+                front: "Mbiemri",
+                back: "Përkufizimi:\nFjalë që shoqëron një **emër** dhe tregon një cilësi, veti ose veçori të tij.\n\nQëllimi:\nPër t'i dhënë emrit **detaje** dhe për të bërë dallimin midis sendeve a frymorëve. Përdoret për të përshkruar."
+            },
+            {
+                front: "Bashkëtingëlloret",
+                back: "Përkufizimi:\nTinguj (shkronja) të folurës që prodhohen kur ajri pengohet plotësisht ose pjesërisht nga organet e të folurit.\n\nQëllimi:\nSë bashku me zanoret, ato shërbejnë për të formuar **rrokjet** dhe **fjalët**."
+            },
+            {
+                front: "Formimi i emrit",
+                back: "Përkufizimi:\nMënyrat dhe rregullat sipas të cilave krijohen emra të rinj (p.sh., me anë të prapashtesave si *-im*, *-ës*, *-je*).\n\nQëllimi:\nPër të pasuruar leksikun e gjuhës dhe për të shprehur **koncepte** të reja, veprime ose gjendje."
+            },
+            {
+                front: "Numri i emrit",
+                back: "Përkufizimi:\nKategori gramatikore që tregon nëse emri shpreh **një** send (numri **njëjës**) apo **më shumë se një** (numri **shumës**).\n\nQëllimi:\nPër të treguar **sasinë** e asaj që emri përfaqëson."
+            },        
+        ];
+
+        let currentCardIndex = 0;
+        const totalCards = flashcardData.length;
+
+        const container = document.getElementById('flashcard-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const statusEl = document.getElementById('card-status');
+
+        // Function to render the current card
+        function renderCard() {
+            const data = flashcardData[currentCardIndex];
+            const isFlipped = container.querySelector('.flashcard')?.classList.contains('flipped') || false;
+
+            container.innerHTML = `
+                <div id="card" class="flashcard">
+                    <!-- Front Face -->
+                    <div class="card-face flex-col ${isFlipped ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300">
+                        <i data-lucide="book-open-text" class="w-10 h-10 text-blue-500 mb-4"></i>
+                        <h2 class="text-3xl font-extrabold text-blue-700 text-center">${data.front}</h2>
+                        <p class="mt-4 text-gray-500 text-sm">Klikoni për të parë definicionin</p>
+                    </div>
+
+                    <!-- Back Face -->
+                    <div class="card-face card-back flex-col items-start text-left">
+                        <h3 class="text-xl font-bold text-blue-800 mb-3">${data.front}</h3>
+                        <div class="text-content text-gray-700 leading-relaxed">${data.back}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Re-initialize Lucide icons for the new content
+            lucide.createIcons();
+
+            // Add click listener to the new card element
+            const card = document.getElementById('card');
+            card.addEventListener('click', flipCard);
+
+            updateStatus();
+            updateNavigationButtons();
+        }
+
+        // Function to flip the card
+        function flipCard() {
+            const card = document.getElementById('card');
+            card.classList.toggle('flipped');
+        }
+
+        // Function to navigate to the previous card
+        function showPrevCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                renderCard();
+            }
+        }
+
+        // Function to navigate to the next card
+        function showNextCard() {
+            if (currentCardIndex < totalCards - 1) {
+                currentCardIndex++;
+                renderCard();
+            }
+        }
+        
+        // Function to update the card status display
+        function updateStatus() {
+            statusEl.textContent = `Karta ${currentCardIndex + 1} nga ${totalCards}`;
+        }
+        
+        // Function to enable/disable navigation buttons
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentCardIndex === 0;
+            nextBtn.disabled = currentCardIndex === totalCards - 1;
+        }
+
+        // Event Listeners for Navigation
+        prevBtn.addEventListener('click', showPrevCard);
+        nextBtn.addEventListener('click', showNextCard);
+
+        // Initial render on page load
+        window.onload = function() {
+            renderCard();
+        };
+
+    </script>
+</body>
+</html>
+
+
